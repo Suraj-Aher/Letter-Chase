@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guessing Words</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #word {
+            font-size: 24px;
+            letter-spacing: 5px;
+        }
+
+        #hint {
+            font-style: italic;
+            color: #666;
+        }
+
+        #message {
+            margin: 10px 0;
+            color: #555;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #face {
+            display: none;
+            width: 100px;
+            height: 100px;
+            margin-top: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .happy {
+            background-image: url('https://i.imgur.com/JvRcPqV.png');
+            /* Happy face */
+            background-size: cover;
+            display: block;
+        }
+
+        .sad {
+            background-image: url('https://i.imgur.com/AmUz1Q9.png');
+            /* Sad face */
+            background-size: cover;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Guessing Game</h1>
+        <p id="hint">Hint: </p>
+        <p id="message">Start guessing the word!</p>
+        <p id="word">_ _ _ _ _</p>
+        <input type="text" id="guess" maxlength="1" placeholder="Enter a letter">
+        <button onclick="makeGuess()">Guess</button>
+        <p id="attempts">Attempts left: 6</p>
+        <div id="face"></div> <!-- Div for displaying face -->
+    </div>
+    <script>
+        const categories = {
+            developer: ["backend", "coder", "frontend", "debugger", "programmer", "software engineer", "architect", "full-stack", "creator", "innovator", "integrator", "designer", "devops", "engineer", "builder"],
+            python: ["flask", "django", "pandas", "numpy", "scripting", "matplotlib", "scikit-learn", "selenium", "asyncio", "pytest", "tkinter", "requests", "sqlalchemy", "flask-restful", "jupyter"],
+            challenge: ["puzzle", "task", "problem", "solution", "mission", "riddle", "quest", "objective", "conundrum", "obstacle", "enigma", "venture", "dilemma", "experiment", "scenario"]
+        };
+
+        let category = "";
+        let word = "";
+        let guessedLetters = [];
+        let attempts = 6;
+
+        function getRandomElement(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+
+        function revealRandomLetters(word, count) {
+            const indices = new Set();
+            while (indices.size < count) {
+                indices.add(Math.floor(Math.random() * word.length));
+            }
+            return word.split('').map((letter, index) => indices.has(index) ? letter : '_').join(' ');
+        }
+
+        function initializeGame() {
+            const categoryNames = Object.keys(categories);
+            category = getRandomElement(categoryNames);
+            word = getRandomElement(categories[category]);
+            guessedLetters = [];
+            attempts = 6;
+
+            const revealedWord = revealRandomLetters(word, 2);
+            document.getElementById('hint').textContent = `Hint: ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+            document.getElementById('message').textContent = 'Start guessing the word!';
+            document.getElementById('attempts').textContent = `Attempts left: ${attempts}`;
+            document.getElementById('word').textContent = revealedWord;
+            document.querySelector('button[onclick="makeGuess()"]').disabled = false;
+            document.getElementById('face').style.display = 'none'; // Hide face initially
+        }
+
+        function updateWordDisplay() {
+            const wordDisplay = word.split('').map(letter => guessedLetters.includes(letter) ? letter : '_').join(' ');
+            document.getElementById('word').textContent = wordDisplay;
+        }
+
+        function makeGuess() {
+            const guessInput = document.getElementById('guess');
+            const guess = guessInput.value.toLowerCase();
+            guessInput.value = '';
+
+            if (guess.length !== 1 || !guess.match(/[a-z]/)) {
+                document.getElementById('message').textContent = 'Please enter a valid single letter.';
+                return; // No attempt deduction on invalid guess
+            }
+
+            if (guessedLetters.includes(guess)) {
+                document.getElementById('message').textContent = 'You already guessed that letter.';
+                return;
+            }
+
+            guessedLetters.push(guess);
+
+            if (word.includes(guess)) {
+                document.getElementById('message').textContent = 'Good guess!';
+                updateWordDisplay();
+                showFace('happy');
+
+                if (!document.getElementById('word').textContent.includes('_')) {
+                    document.getElementById('message').textContent = `Congratulations! You guessed the word: ${word}`;
+                    document.querySelector('button[onclick="makeGuess()"]').disabled = true;
+                    setTimeout(initializeGame, 2000); // Automatically start new game after 2 seconds
+                }
+            } else {
+                document.getElementById('message').textContent = 'Incorrect guess.';
+                attempts--;
+                document.getElementById('attempts').textContent = `Attempts left: ${attempts}`;
+                showFace('sad');
+
+                if (attempts === 0) {
+                    document.getElementById('message').textContent = `Game Over! The word was: ${word}`;
+                    document.getElementById('word').textContent = word; // Show the correct word
+                    setTimeout(initializeGame, 3000); // Wait for 3 seconds before starting the new game
+                }
+            }
+        }
+
+        function showFace(type) {
+            const face = document.getElementById('face');
+            face.className = type;
+            face.style.transform = 'scale(1)';
+            setTimeout(() => face.style.transform = 'scale(2)', 100);
+        }
+
+        // Add event listener for Enter key press
+        document.getElementById('guess').addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                makeGuess();
+            }
+        });
+
+        initializeGame();
+    </script>
+</body>
+
+</html>
